@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bitcoin Android Miner</title>
+    
+    <!-- Etiquetas anti-caché automáticas para evitar limpiar datos manualmente -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+
     <!-- SDK de Telegram Web App -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <!-- SDK oficial de TON Connect UI -->
@@ -26,15 +32,15 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 20px;
+            gap: 15px;
         }
         h2 {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             color: #94a3b8;
             margin: 0;
         }
         #score {
-            font-size: 3.5rem;
+            font-size: 3rem;
             font-weight: bold;
             color: #facc15;
             margin: 0;
@@ -50,13 +56,28 @@
             transform: scale(0.92);
         }
         .coin-img {
-            width: 150px;
-            height: 150px;
+            width: 130px;
+            height: 130px;
             border-radius: 50%;
             box-shadow: 0 0 30px rgba(250, 204, 21, 0.4);
         }
+        .withdraw-btn {
+            background-color: #22c55e;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(34, 197, 94, 0.4);
+            transition: background-color 0.2s ease;
+        }
+        .withdraw-btn:active {
+            background-color: #16a34a;
+        }
         #ton-connect {
-            margin-top: 10px;
+            margin-top: 5px;
         }
     </style>
 </head>
@@ -70,6 +91,9 @@
         <button class="coin-btn" id="clickButton">
             <img src="https://raw.githubusercontent.com/abuenopalomo-cell/Bot-Telegram-Crypto/main/logo.png" alt="BTCA Coin" class="coin-img" onerror="this.src='https://images.unsplash.com/photo-1621416894569-0f39ed31d247?w=150'">
         </button>
+
+        <!-- Botón para retirar tokens -->
+        <button class="withdraw-btn" id="withdrawButton">Retirar a Wallet</button>
 
         <!-- Botón oficial de TON Connect para vincular la wallet -->
         <div id="ton-connect"></div>
@@ -90,7 +114,6 @@
             scoreElement.textContent = score;
             localStorage.setItem('btca_score', score);
             
-            // Vibración háptica sutil si está disponible en Telegram
             if (tg.HapticFeedback) {
                 tg.HapticFeedback.impactOccurred('light');
             }
@@ -100,6 +123,41 @@
         const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
             manifestUrl: 'https://abuenopalomo-cell.github.io/Bot-Telegram-Crypto/tonconnect-manifest.json',
             buttonRootId: 'ton-connect'
+        });
+
+        // Lógica del botón de Retirar
+        document.getElementById('withdrawButton').addEventListener('click', async () => {
+            if (!tonConnectUI.connected) {
+                alert("Por favor, conecta tu billetera TON primero usando el botón de abajo.");
+                return;
+            }
+
+            if (score <= 0) {
+                alert("No tienes saldo suficiente para retirar.");
+                return;
+            }
+
+            const transaction = {
+                validUntil: Math.floor(Date.now() / 1000) + 60,
+                messages: [
+                    {
+                        address: "UQC...........................................", 
+                        amount: "1000000"
+                    }
+                ]
+            };
+
+            try {
+                alert(`Solicitando retiro de ${score} BTCA... Se abrirá tu billetera para confirmar.`);
+                const result = await tonConnectUI.sendTransaction(transaction);
+                
+                alert("¡Retiro solicitado con éxito a tu cartera!");
+                score = 0;
+                scoreElement.textContent = score;
+                localStorage.setItem('btca_score', score);
+            } catch (error) {
+                console.log("Transacción cancelada o error:", error);
+            }
         });
     </script>
 </body>
